@@ -2,7 +2,8 @@
 # 视频按帧截取图像
 # 重命名文件
 import random
-
+import logging
+from datetime import datetime
 import cv2
 import os
 import shutil
@@ -13,9 +14,12 @@ output_folder = 'C:\\MyFile\Datasets\\acoustic optic pair\\original data\\origin
 frame_interval = 5  # 每20帧截取一张图片
 # 重命名文件配置
 renamefile_path = 'C:\\MyFile\\Datasets\\acoustic optic pair\\original data\\origin1'
-# 重命名配对文件配置
-rename_pairfile_path = 'C:\\MyFile\\Datasets\\acoustic optic pair\\original data\\temp'
-
+# 配对文件随机打乱+划分训练测试集+重命名 配置：
+root_dir = "C:\\MyFile\\Datasets\\acoustic optic pair\\original data"
+rename_pairfile_path = os.path.join(root_dir, "2_pickup")
+train_dir = os.path.join(root_dir, "3_shuffle+rename+divide\\train")
+test_dir = os.path.join(root_dir, "3_shuffle+rename+divide\\test")
+log_filename = os.path.join(root_dir, "3_shuffle+rename+divide\\log\\log.txt")
 
 # 获取文件夹中所有文件
 def get_all_file_paths(folder_path):
@@ -89,36 +93,78 @@ def rename_files_in_directory(directory):
         except Exception as e:
             print(f"Failed to rename {file}: {str(e)}")
 
+
 # 重命名文件夹中配对文件文件：xx.jpg xx.json --> 0001.jpg 0001.json
-def rename_pair_in_directory(directory):
+# 并随机划分为训练集和测试集
+def rename_pair_in_directory(dir, train_dir, test_dir, log_filename):
+    logging.basicConfig(filename=log_filename, level=logging.INFO, filemode='w')
+    time_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    logging.info(f"-------------------{time_now}-------------------------")
     # 获取目录下所有文件
-    files = os.listdir(directory)
+    files = os.listdir(dir)
     # 过滤出文件，去掉目录和子目录
-    files = [file for file in files if os.path.isfile(os.path.join(directory, file))]
+    files = [file for file in files if os.path.isfile(os.path.join(dir, file))]
     # 对文件按照名称排序
     files.sort()
 
-    indext_list = list(range(0, int(len(files)/2)))
-    random.shuffle(indext_list)
+    total_num = int(len(files)/2)
+    train_num = int(total_num * 0.7)
+    test_num = total_num - train_num
+    train_index_list = list(range(0, train_num))
+    test_index_list = list(range(0, test_num))
+    random.shuffle(train_index_list)
+    random.shuffle(test_index_list)
 
-    index = -1
+    train_index = 0
+    test_index = 0
+    next = False
     pre_name = ''
+    pre_path = ''
     for i, file in enumerate(files):
         prefix, extension = os.path.splitext(file)
-        if prefix != pre_name:
-            index += 1
-        pre_name = prefix
-        new_name = f"{indext_list[index]:04d}{extension}"
-        old_path = os.path.join(directory, file)
-        new_path = os.path.join(directory, new_name)
-        try:
-            shutil.move(old_path, new_path)
-            print(f"Renamed {file} to {new_name}")
-        except Exception as e:
-            print(f"Failed to rename {file}: {str(e)}")
+        if not next:
+            if (random.random() <= 0.7 and train_index < train_num) or test_index == test_num:
+                new_name = f"{train_index_list[train_index]:04d}{extension}"
+                old_path = os.path.join(dir, file)
+                new_path = os.path.join(train_dir, new_name)
+                pre_name = f"{train_index_list[train_index]:04d}"
+                pre_path = train_dir
+                train_index += 1
+                next = True
+                try:
+                    shutil.copy(old_path, new_path)
+                    logging.info(f"Renamed {old_path} to {new_path}")
+                    print(f"Renamed {old_path} to {new_path}")
+                except Exception as e:
+                    print(f"Failed to rename {file}: {str(e)}")
+            else:
+                new_name = f"{test_index_list[test_index]:04d}{extension}"
+                old_path = os.path.join(dir, file)
+                new_path = os.path.join(test_dir, new_name)
+                pre_name = f"{test_index_list[test_index]:04d}"
+                pre_path = test_dir
+                test_index += 1
+                next = True
+                try:
+                    shutil.copy(old_path, new_path)
+                    logging.info(f"Renamed {old_path} to {new_path}")
+                    print(f"Renamed {old_path} to {new_path}")
+                except Exception as e:
+                    print(f"Failed to rename {file}: {str(e)}")
+        else:
+            old_path = os.path.join(dir, file)
+            new_name = f"{pre_name}{extension}"
+            new_path = os.path.join(pre_path, new_name)
+            next = False
+            try:
+                shutil.copy(old_path, new_path)
+                logging.info(f"Renamed {old_path} to {new_path}")
+                print(f"Renamed {old_path} to {new_path}")
+            except Exception as e:
+                print(f"Failed to rename {file}: {str(e)}")
 
 
 if __name__ == '__main__':
     # capture_frames(video_path, output_folder, frame_interval)
     # rename_files_in_directory(renamefile_path)
-    rename_pair_in_directory(rename_pairfile_path)
+    rename_pair_in_directory(rename_pairfile_path, train_dir, test_dir, log_filename)
