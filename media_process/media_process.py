@@ -9,17 +9,17 @@ import os
 import shutil
 
 # 截取视频图像配置
-video_path = 'C:\\MyFile\Datasets\\acoustic optic pair\\original data\\video'  # 替换为你的实际视频路径
-output_folder = 'C:\\MyFile\Datasets\\acoustic optic pair\\original data\\origin2'  # 替换为你想要保存帧的文件夹
+video_path = 'C:\\MyFile\\Datasets\\acoustic optic pair\\1_video2image\\video-low-quality'
+output_folder = 'C:\\MyFile\\Datasets\\acoustic optic pair\\1_video2image\\origin-low-quliaty'
 frame_interval = 5  # 每20帧截取一张图片
 # 重命名文件配置
 renamefile_path = 'C:\\MyFile\\Datasets\\acoustic optic pair\\original data\\origin1'
 # 配对文件随机打乱+划分训练测试集+重命名 配置：
-root_dir = "C:\\MyFile\\Datasets\\acoustic optic pair\\original data"
-rename_pairfile_path = os.path.join(root_dir, "2_pickup")
-train_dir = os.path.join(root_dir, "3_shuffle+rename+divide\\train")
-test_dir = os.path.join(root_dir, "3_shuffle+rename+divide\\test")
-log_filename = os.path.join(root_dir, "3_shuffle+rename+divide\\log\\log.txt")
+root_dir = "C:\\MyFile\\Datasets\\acoustic optic pair"
+rename_pairfile_path = os.path.join(root_dir, "2_pickup(add_low_quliaty)")
+train_dir = os.path.join(root_dir, "3_shuffle+rename+divide(add_low_quality)\\train")
+test_dir = os.path.join(root_dir, "3_shuffle+rename+divide(add_low_quality)\\test")
+log_filename = os.path.join(root_dir, "3_shuffle+rename+divide(add_low_quality)\\log\\log.txt")
 
 # 获取文件夹中所有文件
 def get_all_file_paths(folder_path):
@@ -82,7 +82,7 @@ def rename_files_in_directory(directory):
     # 遍历文件并重命名
     for index, file in enumerate(files):
         # 构造新文件名，例如：1.txt, 2.txt, ..., n.txt
-        new_name = f"{index + 1}{os.path.splitext(file)[1]}"
+        new_name = f"{index + 1}--{os.path.splitext(file)[1]}"
         # 拼接文件的完整路径
         old_path = os.path.join(directory, file)
         new_path = os.path.join(directory, new_name)
@@ -166,5 +166,6 @@ def rename_pair_in_directory(dir, train_dir, test_dir, log_filename):
 
 if __name__ == '__main__':
     # capture_frames(video_path, output_folder, frame_interval)
+    # rename_files_in_directory('C:\\MyFile\\Datasets\\acoustic optic pair\\2_pickup(add_low_quliaty)')
     # rename_files_in_directory(renamefile_path)
     rename_pair_in_directory(rename_pairfile_path, train_dir, test_dir, log_filename)
